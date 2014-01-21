@@ -1,0 +1,31 @@
+#!/usr/bin/perl
+
+use SimpleDB::Client;
+use SDBUTIL::Repl;
+
+use strict;
+
+my (%SDB_COMMANDS, $secret_key, $access_key, $url, $ret, $sdb, $repl);
+
+if ($ENV{"AWS_ACCESS_KEY"}) {
+	$access_key = $ENV{"AWS_ACCESS_KEY"};
+}
+
+if ($ENV{"AWS_SECRET_KEY"}) {
+	$secret_key = $ENV{"AWS_SECRET_KEY"};
+}
+
+if ($ENV{"AWS_SDB_URL"}) {
+	$url = $ENV{"AWS_SDB_URL"};
+} else {
+	$url = 'https://sdb.eu-west-1.amazonaws.com/';
+}
+
+die "No AWS creds" unless ($access_key && $secret_key);
+
+$sdb = SimpleDB::Client->new(secret_key => $secret_key, access_key => $access_key,
+	simpledb_uri => URI->new($url));
+
+$repl = SDBUTIL::Repl->new($sdb);
+
+$repl->run();
