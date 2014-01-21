@@ -16,10 +16,27 @@ sub list {
 	return $ret->{'ListDomainsResult'}->{'DomainName'};
 }
 
+# selects a database to use for future commands, or prints the current if no arg
+# provided
+sub use {
+	my ($state, $db) = @_;
+
+	$db =~ s/^\s*//;
+	$db =~ s/\s*$//;
+
+	if ($db && length($db) > 0) {
+		$state->{"SELECTED_DOMAIN"} = $db;
+	}
+	return ["Selected domain: " .
+		($state->{"SELECTED_DOMAIN"} ?
+			$state->{"SELECTED_DOMAIN"} : "none")];
+}
+
 sub add_commands {
 	my $cmds = $_[0];
 
 	$cmds->{"list_domains"} = \&list;
+	$cmds->{"use"} = \&use;
 }
 
 1;
