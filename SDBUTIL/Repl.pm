@@ -5,7 +5,10 @@ package SDBUTIL::Repl;
 
 use Term::ReadLine;
 use SimpleDB::Client;
+use Exception::Class;
+use Try::Tiny;
 use SDBUTIL::CMD::Domains;
+use SDBUTIL::CMD::Select;
 use SDBUTIL::CMD::Test;
 
 my $prompt = "sdb> ";
@@ -20,6 +23,7 @@ sub new {
     add_commands($state->{"cmd"}); # this pkg has commands too
     SDBUTIL::CMD::Domains::add_commands($state->{"cmd"});
     SDBUTIL::CMD::Test::add_commands($state->{"cmd"});
+    SDBUTIL::CMD::Select::add_commands($state->{"cmd"});
     # merge ($state->{"cmd"}, \%SDBUTIL::CMD::Domains::cmds);
     return bless $state;
 }
@@ -59,8 +63,13 @@ sub run {
         }
         if (defined $cmd_tab->{$cmd} && ref $cmd_tab->{$cmd} eq "CODE") {
             # pass the rest of the line to the command
-            $ret = &{$cmd_tab->{$cmd}}($state, $args);
-            # commands will return undef if they need to quite
+            eval { $ret = &{$cmd_tab->{$cmd}}($state, $args); };
+            # check for error
+            if ($@) {
+                warn $@;
+                $ret = []; # give it the default empty array ref
+            }
+            # commands will return undef if they need to quit
             if (!defined $ret) {
                 # command wants to quit
                 last;

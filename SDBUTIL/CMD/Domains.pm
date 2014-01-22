@@ -35,7 +35,7 @@ sub use {
 sub add_commands {
 	my $cmds = $_[0];
 
-	$cmds->{"list_domains"} = \&list;
+	$cmds->{"list_domains"} = $cmds->{"ls"} = \&list;
 	$cmds->{"use"} = \&use;
 }
 
