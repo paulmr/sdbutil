@@ -17,7 +17,7 @@ sub new {
     my $state = {};
     $state->{"sdb"} = $_[1];
     $state->{"cmd"} = {};
-    $state->{"auto_print"} = 1;
+    $state->{"opt"} = { auto_print => 1, result_sep => "\n" };
 
     # add the commands from the various modules
     add_commands($state->{"cmd"}); # this pkg has commands too
@@ -26,6 +26,11 @@ sub new {
     SDBUTIL::CMD::Select::add_commands($state->{"cmd"});
     # merge ($state->{"cmd"}, \%SDBUTIL::CMD::Domains::cmds);
     return bless $state;
+}
+
+sub get_opt {
+    my ($state, $opt_name) = @_;
+    return $state->{"opt"}->{$opt_name};
 }
 
 sub results_to_string {
@@ -38,7 +43,7 @@ sub results_to_string {
         @results = @_;
     }
     for my $r (@results) {
-        $ret .= "$r\n";
+        $ret .= $r->to_string() . $state->get_opt("result_sep");
     }
     return $ret;
 }
@@ -75,7 +80,7 @@ sub run {
                 last;
             }
             $state->{"last_results"} = $ret;
-            if ($state->{"auto_print"}) {
+            if ($state->get_opt("auto_print")) {
                 $state->print_results();
             }
         } else {

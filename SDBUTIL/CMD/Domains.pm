@@ -4,6 +4,7 @@
 package SDBUTIL::CMD::Domains;
 
 use strict;
+use SDBUTIL::Data::Response;
 
 # list the domains, each element in the return array has one domain name
 #
@@ -13,7 +14,7 @@ sub list {
 
 	my $ret = $sdb->send_request('ListDomains');
 
-	return $ret->{'ListDomainsResult'}->{'DomainName'};
+	return SDBUTIL::Data::Response->new($ret->{'ListDomainsResult'}->{'DomainName'});
 }
 
 # selects a database to use for future commands, or prints the current if no arg
