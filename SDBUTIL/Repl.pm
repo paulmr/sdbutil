@@ -9,6 +9,7 @@ use Exception::Class;
 use Try::Tiny;
 use SDBUTIL::CMD::Domains;
 use SDBUTIL::CMD::Select;
+use SDBUTIL::CMD::Sys;
 use SDBUTIL::CMD::Test;
 
 my $prompt = "sdb> ";
@@ -18,16 +19,20 @@ sub new {
     $state->{"sdb"} = $_[1];
     $state->{"cmd"} = {};
     $state->{"opt"} = {
-        auto_print => 1,
-        result_sep => "\n",
-        verbose    => 1,
+        auto_print     => 1,
+        card_field_sep => "\n",
+        csv_field_sep  => ",",
+        rec_sep        => "\n",
+        format         => "card",
+        verbose        => 1,
     };
 
     # add the commands from the various modules
     add_commands($state->{"cmd"}); # this pkg has commands too
     SDBUTIL::CMD::Domains::add_commands($state->{"cmd"});
-    SDBUTIL::CMD::Test::add_commands($state->{"cmd"});
+    SDBUTIL::CMD::Sys::add_commands($state->{"cmd"});
     SDBUTIL::CMD::Select::add_commands($state->{"cmd"});
+    SDBUTIL::CMD::Test::add_commands($state->{"cmd"});
     # merge ($state->{"cmd"}, \%SDBUTIL::CMD::Domains::cmds);
     return bless $state;
 }
@@ -47,7 +52,7 @@ sub results_to_string {
         @results = @_;
     }
     for my $r (@results) {
-        $ret .= $r->to_string() . $state->get_opt("result_sep");
+        $ret .= $r->to_string($state) . $state->get_opt("rec_sep");
     }
     return $ret;
 }

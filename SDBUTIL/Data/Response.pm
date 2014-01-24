@@ -17,10 +17,47 @@ package SDBUTIL::Data::Response::DataRow;
 
 our @ISA = ("SDBUTIL::Data::Response::Item");
 
+# these are resonsible for taking an array of values and an array of field names
+# and outputting them
+
+sub fmt_card {
+	my ($names, $vals, $state) = @_;
+	my $ret = "";
+	for (my $i = 0; $i <= $#{$names}; $i++) {
+		$ret .= sprintf("%s: %s%s",
+			$names->[$i], $vals->[$i], $state->get_opt("card_field_sep"));
+	}
+	return $ret;
+}
+
+sub fmt_csv {
+	my ($names, $vals, $state) = @_;
+	return join($state->get_opt("csv_field_sep"), @$vals);
+}
+
+our %DATA_ROW_FORMATTERS = (
+	card => \&fmt_card,
+	csv  => \&fmt_csv
+);
+
 sub to_string {
-	my $self = $_[0];
-	my $row = %$self;
-	return join(",", keys %$self);
+	my ($self, $state) = @_;
+	return $DATA_ROW_FORMATTERS{$state->get_opt("format")}->($self->{'names'},
+		$self->{'vals'}, $state);
+}
+
+sub new {
+	my ($class, $response) = @_;
+	my $self = {};
+	# this is now an array of hash refs
+	$self->{'vals'}     = [];
+	$self->{'names'}   = [];
+	for (my $i = 0; $i <= $#{$response->{"Attribute"}}; $i++) {
+		push @{$self->{'vals'}},  $response->{"Attribute"}->[$i]->{'Value'};
+		push @{$self->{'names'}}, $response->{"Attribute"}->[$i]->{'Name'};
+	}
+	$self->{'ItemName'} = $response->{"Name"};
+	return bless($self, $class);
 }
 
 package SDBUTIL::Data::Response;
