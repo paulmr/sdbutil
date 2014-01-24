@@ -17,7 +17,11 @@ sub new {
     my $state = {};
     $state->{"sdb"} = $_[1];
     $state->{"cmd"} = {};
-    $state->{"opt"} = { auto_print => 1, result_sep => "\n" };
+    $state->{"opt"} = {
+        auto_print => 1,
+        result_sep => "\n",
+        verbose    => 1,
+    };
 
     # add the commands from the various modules
     add_commands($state->{"cmd"}); # this pkg has commands too
