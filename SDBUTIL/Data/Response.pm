@@ -16,6 +16,11 @@ package SDBUTIL::Data::Response::ItemString;
 
 our @ISA = ("SDBUTIL::Data::Response::Item");
 
+sub to_string {
+	my $self = shift;
+	return join("", @{$self});
+}
+
 sub new {
 	my $self = $_[1];
 	return bless([$self], $_[0]);
@@ -86,6 +91,22 @@ sub new {
 	$self->{istable} = 0;
 	$self->{cur_row} = 0;
 	return bless($self, $classname);
+}
+
+package SDBUTIL::Data::ResponseError;
+
+our @ISA = ("SDBUTIL::Data::Response");
+
+sub to_string {
+	my $self = shift;
+	return join("\n", (map {
+			$_->to_string();
+		} @{$self->{'response'}}));
+}
+
+sub new {
+	my $self = SDBUTIL::Data::Response->new($_[1], "SDBUTIL::Data::Response::ItemString");
+	return bless($self, $_[0]);
 }
 
 1;

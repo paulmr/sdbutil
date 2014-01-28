@@ -88,7 +88,7 @@ sub get_formatter {
         if (ref \&$fmt eq "CODE") {
             return \&$fmt;
         } else {
-            warn "Unknown format: $_[0]";
+            print STDERR "Unknown format: $_[0]\n";
             return \&default_formatter;
         }
     } else {
@@ -124,7 +124,7 @@ sub run {
             # check for error
             if ($@) {
                 if ($@->isa("SDBUTIL::Data::ResponseError")) {
-                    warn "Error: " . $@->to_string();
+                    print STDERR "Error: " . $@->to_string(). "\n";
                 } else {
                     warn $@;
                 }
