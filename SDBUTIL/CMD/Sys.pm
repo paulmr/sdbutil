@@ -32,13 +32,28 @@ sub set {
 
 sub field {
 	my $state = shift;
-	if ($#_ < 0 || !$_[0]) {
-		my @fields = keys $state->{'fields'};
-		return SDBUTIL::Data::Response->new(\@fields, "SDBUTIL::Data::Response::ItemString");
-	} else {
+	# if we have an arg, modify the list accordingly; either way print current
+	# status at the end
+	if ($#_ >= 0 && $_[0]) {
 		my @fields = split(/\s/, $_[0]);
-		return SDBUTIL::Data::Response->new(\@fields, "SDBUTIL::Data::Response::ItemString");
+		for (@fields) {
+			my $cmd;
+			if (/^([+-])/) {
+				$cmd = $1;
+				$_ = substr($_, 1);
+			} else {
+				$cmd = "+";
+			}
+			if ($cmd eq "+") {
+				$state->{'fields'}->{$_} = 1;
+			} else {
+				delete($state->{'fields'}->{$_});
+			}
+		}
 	}
+	my @fields = keys $state->{'fields'};
+	return SDBUTIL::Data::Response->new(\@fields,
+		"SDBUTIL::Data::Response::ItemString");
 }
 
 # set the output file for data
