@@ -44,6 +44,7 @@ sub new {
     my $state = {};
     $state->{"sdb"} = $_[1];
     $state->{"cmd"} = {};
+    $state->{"fields"} = {};
 
     # file descriptor, may point to a file in the future
     $state->{"opt"} = {

@@ -23,13 +23,16 @@ sub cmd_select {
 }
 
 # takes names args as a hash and uses them to build an appropriate select
-# statement, returning it as a string
+# statement, using sensible defaults for missing args, and then returning it as
+# a string
 sub bld_select {
 	my $state = shift;
 	my %args = @_;
 	my @ret = ("select");
 	if ($args{'fields'}) {
 		push @ret, join(",", @{$args{'field_list'}});
+	} elsif ($state->get_opt("fields")) {
+		push @ret, $state->get_opt("fields");
 	} else {
 		push @ret, "*";
 	}
@@ -70,6 +73,15 @@ sub cmd_where {
 	return $state->cmd_select($sel);
 }
 
+##### WIP
+#sub describe {
+#	# list the column names
+#	format DESCRIBE =
+#@<<<<<<<<<<<<<<<<<<<<<<<< : @######
+#$name, $count
+#.
+#	
+#}
 
 sub add_commands {
 	my $cmds = $_[0];

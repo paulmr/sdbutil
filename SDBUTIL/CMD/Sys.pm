@@ -11,6 +11,10 @@ use SDBUTIL::Data::Response;
 #
 sub set {
 	my $state = shift;
+	if ($#_ < 0 || !$_[0]) {
+		return SDBUTIL::Data::Response->new(["nothing to do"],
+			"SDBUTIL::Data::Response::ItemString");
+	}
 	my ($var, $val) = split(/\s*=\s*/,shift);
 	if (!defined $state->{"opt"}->{$var}) {
 		die SDBUTIL::Data::ResponseError->new([ "Unknown option $var" ]);
@@ -23,6 +27,17 @@ sub set {
 			return SDBUTIL::Data::Response->new([ "$var set to $val" ],
 				"SDBUTIL::Data::Response::ItemString");
 		}
+	}
+}
+
+sub field {
+	my $state = shift;
+	if ($#_ < 0 || !$_[0]) {
+		my @fields = keys $state->{'fields'};
+		return SDBUTIL::Data::Response->new(\@fields, "SDBUTIL::Data::Response::ItemString");
+	} else {
+		my @fields = split(/\s/, $_[0]);
+		return SDBUTIL::Data::Response->new(\@fields, "SDBUTIL::Data::Response::ItemString");
 	}
 }
 
@@ -47,6 +62,7 @@ sub add_commands {
 
 	$cmds->{"set"} = \&set;
 	$cmds->{"out"} = \&out;
+	$cmds->{"field"} = \&field;
 }
 
 1;
