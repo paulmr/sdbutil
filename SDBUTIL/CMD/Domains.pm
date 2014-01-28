@@ -23,15 +23,16 @@ sub list {
 sub use {
 	my ($state, $db) = @_;
 
-	$db =~ s/^\s*//;
-	$db =~ s/\s*$//;
+	if ($db && $db =~ m/\S/) {
+		$db =~ s/^\s*//;
+		$db =~ s/\s*$//;
 
-	if ($db && length($db) > 0) {
 		$state->{"SELECTED_DOMAIN"} = $db;
 	}
-	return ["Selected domain: " .
-		($state->{"SELECTED_DOMAIN"} ?
-			$state->{"SELECTED_DOMAIN"} : "none")];
+	return SDBUTIL::Data::Response->new(["Selected domain: " .
+			($state->{"SELECTED_DOMAIN"} ?
+			$state->{"SELECTED_DOMAIN"} : "none")],
+			"SDBUTIL::Data::Response::ItemString");
 }
 
 sub add_commands {

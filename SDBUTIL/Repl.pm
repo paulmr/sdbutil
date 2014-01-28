@@ -115,7 +115,7 @@ sub run {
         # get first word and look it up in the command table
         ($cmd, $args) = split /\s/, $_, 2;
         # ignore commands that consist of only white space
-        if(!($cmd =~ /\S/)) {
+        if(!$cmd || !($cmd =~ /\S/)) {
             next;
         }
         if (defined $cmd_tab->{$cmd} && ref $cmd_tab->{$cmd} eq "CODE") {
