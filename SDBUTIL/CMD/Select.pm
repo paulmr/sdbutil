@@ -31,8 +31,8 @@ sub bld_select {
 	my @ret = ("select");
 	if ($args{'fields'}) {
 		push @ret, join(",", @{$args{'field_list'}});
-	} elsif ($state->get_opt("fields")) {
-		push @ret, $state->get_opt("fields");
+	} elsif (%{$state->{"fields"}}) {
+		push @ret, join(",", keys %{$state->{"fields"}});
 	} else {
 		push @ret, "*";
 	}
