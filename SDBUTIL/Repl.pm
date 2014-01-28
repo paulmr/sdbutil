@@ -5,8 +5,7 @@ package SDBUTIL::Repl;
 
 use Term::ReadLine;
 use SimpleDB::Client;
-use Exception::Class;
-use Try::Tiny;
+use Text::CSV;
 use SDBUTIL::CMD::Domains;
 use SDBUTIL::CMD::Select;
 use SDBUTIL::CMD::Sys;
@@ -14,17 +13,47 @@ use SDBUTIL::CMD::Test;
 
 my $prompt = "sdb> ";
 
+sub csv_table_formatter {
+    my $state = shift;
+    my $FH = shift;
+    my $data = shift;
+    my $csv = Text::CSV->new;
+    $csv->print($FH, $data);
+    print $FH "\n";
+}
+
+sub default_table_formatter {
+    my $state = shift;
+    my $FH = shift;
+    my $data = shift;
+    
+    print $FH join ($state->get_opt('field_sep'),
+        map { substr($_, 0, $state->get_opt('field_width')) } @$data),"\n";
+}
+
+sub default_sys_formatter {
+    my $state = shift;
+    my $FH = shift;
+    my $data = shift;
+    
+    print $FH join("", @$data), "\n";
+}
+
+
 sub new {
     my $state = {};
     $state->{"sdb"} = $_[1];
     $state->{"cmd"} = {};
+
+    # file descriptor, may point to a file in the future
     $state->{"opt"} = {
-        auto_print     => 1,
-        card_field_sep => "\n",
-        csv_field_sep  => ",",
-        rec_sep        => "\n",
-        format         => "card",
-        verbose        => 1,
+        auto_print    => 1,
+        field_sep     => " | ",
+        field_width   => 10,
+        csv_field_sep => ",",
+        rec_sep       => "\n",
+        format        => "default",
+        verbose       => 1
     };
 
     # add the commands from the various modules
@@ -44,22 +73,36 @@ sub get_opt {
 
 sub results_to_string {
     my $state = shift;
-    my @results;
     my $ret = "";
-    if ($#_ < 0) {
-        @results = @{$state->{"last_results"}};
-    } else {
-        @results = @_;
-    }
-    for my $r (@results) {
+    for my $r (@{$_[0]}) {
         $ret .= $r->to_string($state) . $state->get_opt("rec_sep");
     }
     return $ret;
 }
 
-sub print_results {
+sub get_formatter {
+    my $fmt = $_[0] . "_table_formatter";
+    my $response = $_[1];
+
+    if ($response->{'istable'}) {
+        if (ref \&$fmt eq "CODE") {
+            return \&$fmt;
+        } else {
+            warn "Unknown format: $_[0]";
+            return \&default_formatter;
+        }
+    } else {
+        return \&default_sys_formatter;
+    }
+}
+
+sub print_response {
     my $state = shift;
-    print $state->results_to_string(@_);
+    my $response = shift;
+    my $fmt = get_formatter($state->get_opt("format"), $response);
+    while (defined (my $row = $response->get_row())) {
+        &{$fmt}($state, \*STDOUT, $row);
+    }
 }
 
 sub run {
@@ -80,8 +123,12 @@ sub run {
             eval { $ret = &{$cmd_tab->{$cmd}}($state, $args); };
             # check for error
             if ($@) {
-                warn $@;
-                $ret = []; # give it the default empty array ref
+                if ($@->isa("SDBUTIL::Data::ResponseError")) {
+                    warn "Error: " . $@->to_string();
+                } else {
+                    warn $@;
+                }
+                $ret = SDBUTIL::Data::Response->new([]); # give it the default empty array ref
             }
             # commands will return undef if they need to quit
             if (!defined $ret) {
@@ -90,7 +137,7 @@ sub run {
             }
             $state->{"last_results"} = $ret;
             if ($state->get_opt("auto_print")) {
-                $state->print_results();
+                $state->print_response($ret);
             }
         } else {
             print "Unknown command $cmd\n";

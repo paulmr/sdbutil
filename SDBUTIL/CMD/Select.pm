@@ -13,7 +13,10 @@ sub select {
 	if ($state->get_opt("verbose")) {
 		print "Row count: ", $state->{"RowCount"}, "\n";
 	}
-	return SDBUTIL::Data::Response->new($ret->{"Item"}, "SDBUTIL::Data::Response::DataRow");
+	my $response = SDBUTIL::Data::Response->new($ret->{"Item"},
+		"SDBUTIL::Data::Response::DataRow");
+	$response->{'istable'} = 1;
+	return $response;
 }
 
 sub add_commands {

@@ -2,83 +2,73 @@ package SDBUTIL::Data::Response::Item;
 
 use strict;
 
-sub to_string {
-	my $self = $_[0];
-	return "$$self";
+sub get_row {
+	my $self = shift;
+	return $self;
 }
 
 sub new {
-	my ($class, $self) = @_;
-	# if it is not already a reference, convert it to one
-	return bless (((ref $self) ? $self : \$self), $class);
+	my $self = $_[1];
+	return bless($self, $_[0]);
+}
+
+package SDBUTIL::Data::Response::ItemString;
+
+our @ISA = ("SDBUTIL::Data::Response::Item");
+
+sub new {
+	my $self = $_[1];
+	return bless([$self], $_[0]);
 }
 
 package SDBUTIL::Data::Response::DataRow;
 
 our @ISA = ("SDBUTIL::Data::Response::Item");
 
-# these are resonsible for taking an array of values and an array of field names
-# and outputting them
-
-sub fmt_card {
-	my ($names, $vals, $state) = @_;
-	my $ret = "";
-	for (my $i = 0; $i <= $#{$names}; $i++) {
-		$ret .= sprintf("%s: %s%s",
-			$names->[$i], $vals->[$i], $state->get_opt("card_field_sep"));
-	}
-	return $ret;
-}
-
-sub fmt_csv {
-	my ($names, $vals, $state) = @_;
-	return join($state->get_opt("csv_field_sep"), @$vals);
-}
-
-our %DATA_ROW_FORMATTERS = (
-	card => \&fmt_card,
-	csv  => \&fmt_csv
-);
-
-sub to_string {
-	my ($self, $state) = @_;
-	return $DATA_ROW_FORMATTERS{$state->get_opt("format")}->($self->{'names'},
-		$self->{'vals'}, $state);
-}
-
 sub new {
-	my ($class, $response) = @_;
+	my ($classname, $item) = @_;
 	my $self = {};
-	# this is now an array of hash refs
-	$self->{'vals'}     = [];
-	$self->{'names'}   = [];
-	for (my $i = 0; $i <= $#{$response->{"Attribute"}}; $i++) {
-		push @{$self->{'vals'}},  $response->{"Attribute"}->[$i]->{'Value'};
-		push @{$self->{'names'}}, $response->{"Attribute"}->[$i]->{'Name'};
+
+	$self->{'name'} = $item->{'Name'};
+	$self->{'data'} = {};
+	for (@{$item->{'Attribute'}}) {
+		my ($key, $val) = ($_->{'Name'}, $_->{'Value'});
+		$self->{data}->{$key} = $val;
 	}
-	$self->{'ItemName'} = $response->{"Name"};
-	return bless($self, $class);
+	return bless($self, $classname);
+}
+
+sub get_row {
+	my $self = shift;
+	my @ret;
+	# return an array of values, sorted by the key
+	for (sort keys %{$self->{'data'}}) {
+		push @ret, $self->{data}->{$_};
+	}
+	return \@ret;
 }
 
 package SDBUTIL::Data::Response;
 
 # each item may be of a different response
 
-sub to_string {
-	my ($i, $self) = (0, $_[0]);
+sub get_row {
+	my $self = shift;
 
-	my $ret = "";
-
-	for(; $i <= $#{$self}; $i++) {
-		$ret .= ($self->[$i]->to_string() . "\n");
+	if ($self->{cur_row} > $#{$self->{response}}) {
+		# finished
+		return undef;
+	} else {
+		return $self->{response}->[$self->{cur_row}++]->get_row();
 	}
-	return $ret;
 }
 
 # bless the provided array ref as the provided class
 sub new {
-	my ($i, $ref) = (0, $_[1]);
+	my ($i, $classname, $ref) = (0, $_[0], $_[1]);
 	my $itemClass = $_[2] || 'SDBUTIL::Data::Response::Item';
+
+	my $self = {};
 
 	if (ref $ref ne "ARRAY") {
 		return undef;
@@ -90,7 +80,12 @@ sub new {
 		# the default, just convert it to a scalar reference
 		$ref->[$i] = $itemClass->new($ref->[$i]);
 	}
-	return bless $ref;
+
+	$self->{response} = $ref;
+	$self->{isdata} = 0;
+	$self->{istable} = 0;
+	$self->{cur_row} = 0;
+	return bless($self, $classname);
 }
 
 1;

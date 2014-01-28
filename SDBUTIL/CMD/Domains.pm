@@ -14,7 +14,8 @@ sub list {
 
 	my $ret = $sdb->send_request('ListDomains');
 
-	return SDBUTIL::Data::Response->new($ret->{'ListDomainsResult'}->{'DomainName'});
+	return SDBUTIL::Data::Response->new($ret->{'ListDomainsResult'}->{'DomainName'},
+		"SDBUTIL::Data::Response::ItemString");
 }
 
 # selects a database to use for future commands, or prints the current if no arg
