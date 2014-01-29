@@ -33,10 +33,17 @@ our @ISA = ("SDBUTIL::Data::Response::Item");
 sub new {
 	my ($classname, $item) = @_;
 	my $self = {};
+	my $attributes = $item->{'Attribute'};
+
+	# it's possible that attributes is actually just a single hash, if there is
+	# only one result -- in that case put it into an array
+	if (ref $attributes ne "ARRAY") {
+		$attributes = [$attributes];
+	}
 
 	$self->{'name'} = $item->{'Name'};
 	$self->{'data'} = {};
-	for (@{$item->{'Attribute'}}) {
+	for (@$attributes) {
 		my ($key, $val) = ($_->{'Name'}, $_->{'Value'});
 		$self->{data}->{$key} = $val;
 	}

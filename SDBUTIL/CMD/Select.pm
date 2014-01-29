@@ -30,7 +30,7 @@ sub bld_select {
 	my %args = @_;
 	my @ret = ("select");
 	if ($args{'fields'}) {
-		push @ret, join(",", @{$args{'field_list'}});
+		push @ret, join(",", @{$args{'fields'}});
 	} elsif (%{$state->{"fields"}}) {
 		push @ret, join(",", keys %{$state->{"fields"}});
 	} else {
@@ -70,7 +70,13 @@ sub cmd_where {
 		die SDBUTIL::Data::ResponseError->new(["No argument provided"])
 	}
 	$sel = bld_select($state, where => $where);
-	return $state->cmd_select($sel);
+	return cmd_select($state, $sel);
+}
+
+sub cmd_count {
+	my $state = shift;
+	my $sel = bld_select($state, fields => ["count(*)"]);
+	return cmd_select($state, $sel);
 }
 
 ##### WIP
@@ -89,6 +95,7 @@ sub add_commands {
 	$cmds->{"select"} = \&cmd_select;
 	$cmds->{"sel"} = \&cmd_sel;
 	$cmds->{"where"} = \&cmd_where;
+	$cmds->{"count"} = \&cmd_count;
 }
 
 1;
