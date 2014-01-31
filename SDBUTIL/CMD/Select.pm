@@ -4,15 +4,30 @@ package SDBUTIL::CMD::Select;
 #
 sub cmd_select {
 	my ($state, $stmt) = @_;
+	# the rows will be built up here (i.e. if we have to do multiple requests in
+	# order to get all of them)
+	my $rows = [];
 	my $sdb = $state->{"sdb"};
-
 	if ($stmt !~ m/^select/) {
 		$stmt = "select $stmt";
 	}
-	my $ret = $sdb->send_request('Select', { SelectExpression => $stmt });
-	$ret = $ret->{'SelectResult'};
-	$state->{"NextToken"} = $ret->{"NextToken"};
-	$state->{"RowCount"}  = $#{$ret->{"Item"}} + 1;
+	$state->{"RowCount"}  = 0;
+	my $next = undef;
+	do {
+		my $req = { SelectExpression => $stmt };
+		$req->{'NextToken'} = $next if $next;
+		my $ret = $sdb->send_request('Select', $req)->{'SelectResult'};;
+		if (exists($ret->{"NextToken"})) {
+			$state->{"NextToken"} = $ret->{"NextToken"};
+			# put the next token in for the next request
+			$next = $ret->{"NextToken"};
+		} else {
+			$state->{"NextToken"} = $next = undef;
+		}
+		$state->{"RowCount"}  += ($#{$ret->{"Item"}} + 1);
+		push @$rows, @{$ret->{"Item"}};
+	} while($next);
+
 	if ($state->get_opt("verbose")) {
 		print "Row count: ", $state->{"RowCount"}, "\n";
 	}
