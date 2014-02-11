@@ -16,7 +16,7 @@ sub cmd_select {
 	do {
 		my $req = { SelectExpression => $stmt };
 		$req->{'NextToken'} = $next if $next;
-		my $ret = $sdb->send_request('Select', $req)->{'SelectResult'};;
+		my $ret = $sdb->send_request('Select', $req)->{'SelectResult'};
 		if (exists($ret->{"NextToken"})) {
 			$state->{"NextToken"} = $ret->{"NextToken"};
 			# put the next token in for the next request
@@ -24,14 +24,14 @@ sub cmd_select {
 		} else {
 			$state->{"NextToken"} = $next = undef;
 		}
-		$state->{"RowCount"}  += ($#{$ret->{"Item"}} + 1);
+		$state->{"RowCount"}  += (scalar @{$ret->{"Item"}});
 		push @$rows, @{$ret->{"Item"}};
 	} while($next);
 
 	if ($state->get_opt("verbose")) {
 		print "Row count: ", $state->{"RowCount"}, "\n";
 	}
-	my $response = SDBUTIL::Data::Response->new($ret->{"Item"},
+	my $response = SDBUTIL::Data::Response->new($rows,
 		"SDBUTIL::Data::Response::DataRow");
 	$response->{'istable'} = 1;
 	return $response;
