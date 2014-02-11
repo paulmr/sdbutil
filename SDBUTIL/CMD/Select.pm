@@ -8,15 +8,22 @@ sub cmd_select {
 	# order to get all of them)
 	my $rows = [];
 	my $sdb = $state->{"sdb"};
-	if ($stmt !~ m/^select/) {
-		$stmt = "select $stmt";
-	}
 	$state->{"RowCount"}  = 0;
 	my $next = undef;
 	do {
-		my $req = { SelectExpression => $stmt };
-		$req->{'NextToken'} = $next if $next;
+		# we were given a pre-formed statement object to send
+		my $req;
+		if (ref $stmt eq "HASH") {
+			$req = $stmt;
+		} else {
+			if ($stmt !~ m/^select/) {
+				$stmt = "select $stmt";
+			}
+			$req = { SelectExpression => $stmt };
+			$req->{'NextToken'} = $next if $next;
+		}
 
+		$state->{last_select} = $req->{SelectExpression};
 		my $ret = $sdb->send_request('Select', $req)->{'SelectResult'};
 
 		if (exists($ret->{"NextToken"})) {
@@ -38,6 +45,20 @@ sub cmd_select {
 	$response->{'istable'} = 1;
 	$response->{'isdata'}  = 1;
 	return $response;
+}
+
+# just send the next token (if there is one) and return the results, if there
+# are any
+sub cmd_next {
+	my $state = shift;
+	if ($state->{"NextToken"}) {
+		return cmd_select $state, {
+			NextToken        => $state->{NextToken},
+			SelectExpression => $state->{last_select},
+		};
+	}
+	return SDBUTIL::Data::Response->new([ "No more and then" ],
+		"SDBUTIL::Data::Response::ItemString");
 }
 
 # takes names args as a hash and uses them to build an appropriate select
@@ -112,6 +133,7 @@ sub add_commands {
 
 	$cmds->{"select"} = \&cmd_select;
 	$cmds->{"sel"} = \&cmd_sel;
+	$cmds->{"next"} = \&cmd_next;
 	$cmds->{"where"} = \&cmd_where;
 	$cmds->{"count"} = \&cmd_count;
 }
