@@ -46,7 +46,7 @@ sub new {
     $state->{"cmd"} = {};
     $state->{"fields"} = {};
     $state->{"out_filename"} = "";
-    $state->{OUT_DATAF} = \*STDOUT;
+    $state->{DATA_OUTF} = \*STDOUT;
 
     # file descriptor, may point to a file in the future
     $state->{"opt"} = {
@@ -56,7 +56,8 @@ sub new {
         csv_field_sep => ",",
         rec_sep       => "\n",
         format        => "default",
-        verbose       => 1
+        verbose       => 1,
+        autonext      => 0,
     };
 
     # add the commands from the various modules

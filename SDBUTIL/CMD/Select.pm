@@ -28,7 +28,7 @@ sub cmd_select {
 		}
 		$state->{"RowCount"}  += (scalar @{$ret->{"Item"}});
 		push @$rows, @{$ret->{"Item"}};
-	} while($next);
+	} while($state->get_opt('autonext') && $next);
 
 	if ($state->get_opt("verbose")) {
 		print "Row count: ", $state->{"RowCount"}, "\n";
