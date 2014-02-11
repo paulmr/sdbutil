@@ -45,6 +45,8 @@ sub new {
     $state->{"sdb"} = $_[1];
     $state->{"cmd"} = {};
     $state->{"fields"} = {};
+    $state->{"out_filename"} = "";
+    $state->{OUT_DATAF} = \*STDOUT;
 
     # file descriptor, may point to a file in the future
     $state->{"opt"} = {
@@ -101,8 +103,9 @@ sub print_response {
     my $state = shift;
     my $response = shift;
     my $fmt = get_formatter($state->get_opt("format"), $response);
+    my $FH = ($response->{isdata}) ? $state->{DATA_OUTF} : \*STDOUT;
     while (defined (my $row = $response->get_row())) {
-        &{$fmt}($state, \*STDOUT, $row);
+        &{$fmt}($state, $FH, $row);
     }
 }
 

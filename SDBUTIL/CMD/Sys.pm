@@ -60,7 +60,12 @@ sub field {
 sub out {
 	my ($state, $fname) = @_;
 
-	if (defined $state->{"DATA_OUTF"}) {
+	if (!$fname) {
+		my $ret = ( $state->{out_filename} || "No output file" );
+		return SDBUTIL::Data::Response->new([ $ret ], "SDBUTIL::Data::Response::ItemString");
+	}
+
+	if (defined $state->{DATA_OUTF}) {
 		die SDBUTIL::Data::ResponseError->new([ "a file is already open for output" ]);
 	}
 
@@ -68,8 +73,10 @@ sub out {
 		die SDBUTIL::Data::ResponseError->new([ "could not open file $fname" ]);
 	}
 
-	$state->{"DATA_OUTF"} = \*DATA_OUTF;
-	return SDBUTIL::Data::Response->new([ "Data will be output to $fname" ]);
+	$state->{DATA_OUTF}  = \*DATA_OUTF;
+	$state->{out_filename} = $fname;
+	return SDBUTIL::Data::Response->new([ "Data will be output to $fname" ],
+		"SDBUTIL::Data::Response::ItemString");
 }
 
 sub add_commands {

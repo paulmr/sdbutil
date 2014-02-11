@@ -16,7 +16,9 @@ sub cmd_select {
 	do {
 		my $req = { SelectExpression => $stmt };
 		$req->{'NextToken'} = $next if $next;
+
 		my $ret = $sdb->send_request('Select', $req)->{'SelectResult'};
+
 		if (exists($ret->{"NextToken"})) {
 			$state->{"NextToken"} = $ret->{"NextToken"};
 			# put the next token in for the next request
@@ -34,6 +36,7 @@ sub cmd_select {
 	my $response = SDBUTIL::Data::Response->new($rows,
 		"SDBUTIL::Data::Response::DataRow");
 	$response->{'istable'} = 1;
+	$response->{'isdata'}  = 1;
 	return $response;
 }
 
