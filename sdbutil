@@ -2,6 +2,7 @@
 
 use SimpleDB::Client;
 use SDBUTIL::Repl;
+use Getopt::Std;
 
 use strict;
 
@@ -21,11 +22,18 @@ if ($ENV{"AWS_SDB_URL"}) {
 	$url = 'https://sdb.eu-west-1.amazonaws.com/';
 }
 
+my %opts;
+getopts("f:", \%opts);
+
 die "No AWS creds" unless ($access_key && $secret_key);
 
 $sdb = SimpleDB::Client->new(secret_key => $secret_key, access_key => $access_key,
 	simpledb_uri => URI->new($url));
 
 $repl = SDBUTIL::Repl->new($sdb);
+
+if ($opts{f}) {
+	$repl->source_file($opts{f});
+}
 
 $repl->run();
