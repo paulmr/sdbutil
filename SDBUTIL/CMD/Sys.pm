@@ -65,6 +65,14 @@ sub out {
 		return SDBUTIL::Data::Response->new([ $ret ], "SDBUTIL::Data::Response::ItemString");
 	}
 
+	if ($fname eq "-") {
+		undef $state->{out_filename};
+		close $state->{DATA_OUTF};
+		$state->{DATA_OUTF} = \*STDOUT;
+		return SDBUTIL::Data::Response->new([ "Resetting output file to STDOUT" ],
+			"SDBUTIL::Data::Response::ItemString");
+	}
+
 	if ($state->{out_filename}) {
 		die SDBUTIL::Data::ResponseError->new([ "a file is already open for output" ]);
 	}

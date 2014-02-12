@@ -115,17 +115,18 @@ sub print_response {
 # from a file
 sub get_next_line {
     our ($inputf, $term, $prompt);
+    my $next_line;
     if (defined $inputf) {
-        my $next_line = $inputf->getline;
+        $next_line = $inputf->getline;
         if (!defined $next_line) {
             # finished
             undef $inputf;
             return ""; # undef means quit
         }
-        return $next_line;
     } else {
-        return $term->readline($prompt);
+        $next_line = $term->readline($prompt);
     }
+    chomp $next_line; return $next_line;
 }
 
 sub run {
@@ -136,6 +137,8 @@ sub run {
     my $ret;
 
     while ( defined ($_ = get_next_line) ) {
+        # ignore comment lines
+        next if (m/^\s*#/);
         # get first word and look it up in the command table
         ($cmd, $args) = split /\s/, $_, 2;
         # ignore commands that consist of only white space
