@@ -61,6 +61,23 @@ sub cmd_next {
 		"SDBUTIL::Data::Response::ItemString");
 }
 
+# prints out the field names from the selected results
+sub cmd_describe {
+	my $results = cmd_sel(@_);
+	my %fields;
+	for (@{$results->{response}}) {
+		for $key (@{$_->get_keys}) {
+			if (defined $fields{$key}) {
+				$fields{$key} += 1;
+			} else {
+				$fields{$key} = 1;
+			}
+		}
+	}
+	return SDBUTIL::Data::Response->new([ keys %fields ], "SDBUTIL::Data::Response::ItemString");
+	return $results;
+}
+
 # takes names args as a hash and uses them to build an appropriate select
 # statement, using sensible defaults for missing args, and then returning it as
 # a string
@@ -132,10 +149,11 @@ sub add_commands {
 	my $cmds = $_[0];
 
 	$cmds->{"select"} = \&cmd_select;
-	$cmds->{"sel"} = \&cmd_sel;
-	$cmds->{"next"} = \&cmd_next;
-	$cmds->{"where"} = \&cmd_where;
-	$cmds->{"count"} = \&cmd_count;
+	$cmds->{"sel"}    = \&cmd_sel;
+	$cmds->{"desc"}   = \&cmd_describe;
+	$cmds->{"next"}   = \&cmd_next;
+	$cmds->{"where"}  = \&cmd_where;
+	$cmds->{"count"}  = \&cmd_count;
 }
 
 1;

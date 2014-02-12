@@ -65,7 +65,7 @@ sub out {
 		return SDBUTIL::Data::Response->new([ $ret ], "SDBUTIL::Data::Response::ItemString");
 	}
 
-	if (defined $state->{DATA_OUTF}) {
+	if ($state->{out_filename}) {
 		die SDBUTIL::Data::ResponseError->new([ "a file is already open for output" ]);
 	}
 

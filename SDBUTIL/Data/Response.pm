@@ -60,6 +60,11 @@ sub get_row {
 	return \@ret;
 }
 
+sub get_keys {
+	my $self = shift;
+	return [ keys %{$self->{'data'}} ];
+}
+
 package SDBUTIL::Data::Response;
 
 # each item may be of a different response
