@@ -3,6 +3,7 @@
 
 package SDBUTIL::Repl;
 
+use FileHandle;
 use Term::ReadLine;
 use SimpleDB::Client;
 use Text::CSV;
@@ -11,7 +12,8 @@ use SDBUTIL::CMD::Select;
 use SDBUTIL::CMD::Sys;
 use SDBUTIL::CMD::Test;
 
-my $prompt = "sdb> ";
+our $prompt = "sdb> ";
+our ($term, $inputf);
 
 sub csv_table_formatter {
     my $state = shift;
@@ -38,7 +40,6 @@ sub default_sys_formatter {
     
     print $FH join("", @$data), "\n";
 }
-
 
 sub new {
     my $state = {};
@@ -110,13 +111,31 @@ sub print_response {
     }
 }
 
+# get from terminal using readline, or from file if we are currently reading
+# from a file
+sub get_next_line {
+    our ($inputf, $term, $prompt);
+    if (defined $inputf) {
+        my $next_line = $inputf->getline;
+        if (!defined $next_line) {
+            # finished
+            undef $inputf;
+            return ""; # undef means quit
+        }
+        return $next_line;
+    } else {
+        return $term->readline($prompt);
+    }
+}
+
 sub run {
     my $state   = $_[0];
     my $cmd_tab = $state->{"cmd"};
-    my $term    = new Term::ReadLine 'sdbutil';
+    our $term    = new Term::ReadLine 'sdbutil';
+    our $prompt;
     my $ret;
 
-    while ( defined ($_ = $term->readline($prompt)) ) {
+    while ( defined ($_ = get_next_line) ) {
         # get first word and look it up in the command table
         ($cmd, $args) = split /\s/, $_, 2;
         # ignore commands that consist of only white space
@@ -165,6 +184,18 @@ sub list_commands {
     return \@cmds;
 }
 
+# reads a file from the command line, if possible
+sub source_file {
+    my ($state, $fname) = @_;
+    our $inputf;
+    if (defined $inputf) {
+        die "Already sourceing a file, recursion not allowed (yet)";
+    }
+    ( $fname && -r $fname ) || die "cannot read file";
+    $inputf = FileHandle->new($fname, "r") || die "Couldn't open file";
+    return SDBUTIL::Data::Response->new([]); # give it the default empty array ref
+}
+
 sub quit {
     return undef;
 }
@@ -176,5 +207,8 @@ sub add_commands {
 	$cmds->{"list_commands"} = \&list_commands;
 	$cmds->{"quit"} = \&quit;
 	$cmds->{"exit"} = \&quit;
+	$cmds->{"source"} = \&source_file;
 	$cmds->{"x"} = \&quit;
 }
+
+1;
