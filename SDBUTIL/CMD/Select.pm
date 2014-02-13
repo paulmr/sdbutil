@@ -63,7 +63,9 @@ sub cmd_next {
 
 # prints out the field names from the selected results
 sub cmd_describe {
-	my $results = cmd_sel(@_);
+	my $state = shift;
+	my $stmt = bld_select($state, fields => ['*']);
+	my $results = cmd_select($state, $stmt);
 	my %fields;
 	for (@{$results->{response}}) {
 		for $key (@{$_->get_keys}) {

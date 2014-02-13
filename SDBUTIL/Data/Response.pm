@@ -43,6 +43,7 @@ sub new {
 
 	$self->{'name'} = $item->{'Name'};
 	$self->{'data'} = {};
+	$self->{'data'}->{'itemName'} = $self->{'name'};
 	for (@$attributes) {
 		my ($key, $val) = ($_->{'Name'}, $_->{'Value'});
 		$self->{data}->{$key} = $val;
@@ -51,11 +52,22 @@ sub new {
 }
 
 sub get_row {
-	my $self = shift;
+	my $self   = shift;
+	my @fields = @_;
 	my @ret;
-	# return an array of values, sorted by the key
-	for (sort keys %{$self->{'data'}}) {
-		push @ret, $self->{data}->{$_};
+	if (scalar @fields < 1) {
+		@fields = sort keys %{$self->{'data'}};
+	} elsif (ref $fields[0] eq "ARRAY") {
+		@fields = @{$fields[0]};
+	}
+	# return an array of values, getting the keys provided or in the order
+	# provided (or simply al keys sorted otherwise)
+	for (@fields) {
+		if (defined $self->{data}->{$_}) {
+			push @ret, $self->{data}->{$_};
+		} else {
+			push @ret, "NULL";
+		}
 	}
 	return \@ret;
 }
@@ -76,7 +88,7 @@ sub get_row {
 		# finished
 		return undef;
 	} else {
-		return $self->{response}->[$self->{cur_row}++]->get_row();
+		return $self->{response}->[$self->{cur_row}++]->get_row(@_);
 	}
 }
 
@@ -99,9 +111,9 @@ sub new {
 	}
 
 	$self->{response} = $ref;
-	$self->{isdata} = 0;
-	$self->{istable} = 0;
-	$self->{cur_row} = 0;
+	$self->{isdata}   = 0;
+	$self->{istable}  = 0;
+	$self->{cur_row}  = 0;
 	return bless($self, $classname);
 }
 

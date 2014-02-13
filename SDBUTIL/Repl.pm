@@ -3,6 +3,8 @@
 
 package SDBUTIL::Repl;
 
+use strict;
+
 use FileHandle;
 use Term::ReadLine;
 use SimpleDB::Client;
@@ -28,9 +30,13 @@ sub default_table_formatter {
     my $state = shift;
     my $FH = shift;
     my $data = shift;
-    
+   
     print $FH join ($state->get_opt('field_sep'),
-        map { substr($_, 0, $state->get_opt('field_width')) } @$data),"\n";
+        map {
+            # field_width = 0 means no field_width
+            sprintf("%" . ($state->get_opt('field_width') || "") . "s",
+                substr($_, 0, ($state->get_opt('field_width') || length($_))));
+        } @$data),"\n";
 }
 
 sub default_sys_formatter {
@@ -59,6 +65,7 @@ sub new {
         format        => "default",
         verbose       => 1,
         autonext      => 0,
+        header        => 1,
     };
 
     # add the commands from the various modules
@@ -106,7 +113,11 @@ sub print_response {
     my $response = shift;
     my $fmt = get_formatter($state->get_opt("format"), $response);
     my $FH = ($response->{isdata}) ? $state->{DATA_OUTF} : \*STDOUT;
-    while (defined (my $row = $response->get_row())) {
+    my @fields = keys %{$state->{"fields"}};# might be empty, or might be ignored
+    if ($state->get_opt("header") && $response->{istable} && @fields) {
+        &{$fmt}($state, $FH, \@fields);
+    }
+    while (defined (my $row = $response->get_row(@fields))) {
         &{$fmt}($state, $FH, $row);
     }
 }
@@ -140,7 +151,7 @@ sub run {
         # ignore comment lines
         next if (m/^\s*#/);
         # get first word and look it up in the command table
-        ($cmd, $args) = split /\s/, $_, 2;
+        my ($cmd, $args) = split /\s/, $_, 2;
         # ignore commands that consist of only white space
         if(!$cmd || !($cmd =~ /\S/)) {
             next;
