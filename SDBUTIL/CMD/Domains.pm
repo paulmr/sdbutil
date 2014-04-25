@@ -6,6 +6,14 @@ package SDBUTIL::CMD::Domains;
 use strict;
 use SDBUTIL::Data::Response;
 
+sub create_domain {
+	my ($state, $domainName) = @_;
+	my $sdb = $state->{'sdb'};
+
+	my $ret = $sdb->send_request('CreateDomain', { DomainName => $domainName });
+	return SDBUTIL::Data::Response->new([ "done" ], "SDBUTIL::Data::Response::ItemString");
+}
+
 # list the domains, each element in the return array has one domain name
 #
 sub list {
@@ -38,6 +46,7 @@ sub use {
 sub add_commands {
 	my $cmds = $_[0];
 
+	$cmds->{"create"} = \&create_domain;
 	$cmds->{"list_domains"} = $cmds->{"ls"} = \&list;
 	$cmds->{"use"} = \&use;
 }
